@@ -90,14 +90,18 @@ def main():
         
     
     try:
-        # Reading all lines from stdin
-        input_lines = sys.stdin.read().strip().split('\n')
-        if len(input_lines) < 2:
-            print("Error: Expected 2 lines of input (Large Disks, Small Disks).")
+        # Read input
+        line1_str = sys.stdin.readline()
+        line2_str = sys.stdin.readline()
+        
+        # Error check just in case
+        if not line1_str or not line2_str:
+            print("Error: Expected 2 lines of input.")
             sys.exit(1)
-            
-        line1 = input_lines[0].strip().split()
-        line2 = input_lines[1].strip().split()
+
+        # Split into lists
+        line1 = line1_str.strip().split()
+        line2 = line2_str.strip().split()
         
         # Convert strings to integers
         large_disks_input = [int(x) for x in line1]
@@ -106,6 +110,7 @@ def main():
     except Exception as e:
         print(f"Error reading input: {e}")
         sys.exit(1)
+        
         
     puzzle = Disks(n_arg, large_disks_input, small_disks_input)
     
