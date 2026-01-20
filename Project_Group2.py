@@ -58,13 +58,17 @@ class Disks:
         # Left is subtraction
         right_jump_index = (zero_index + jump_distance) % self.n
         left_jump_index  = (zero_index - jump_distance) % self.n
+        right_neighbor   = (zero_index + 1)
+        left_neighbor    = (zero_index - 1)
         
         # Debug Print
         print(f"0 is at: [{zero_index}]")
         print(f"Large Disk at 0 is: [{jump_distance}]")
         print("==================")
-        print(f"Right Jump to: {zero_index} to Small disk index: {right_jump_index}. Value: {self.small_disks[right_jump_index]}")
-        print(f"Left Jump to:  {zero_index} to Small disk index: {left_jump_index}. Value: {self.small_disks[left_jump_index]}")
+        print(f"Right Jump to:      [{zero_index}] to Small disk index: [{right_jump_index}].  Value: {self.small_disks[right_jump_index]}")
+        print(f"Left Jump to:       [{zero_index}] to Small disk index: [{left_jump_index}].  Value: {self.small_disks[left_jump_index]}")
+        print(f"Right neighbor to:  [{zero_index}] to Small disk index: [{right_neighbor}].  Value: {self.small_disks[right_neighbor]}")
+        print(f"Left neighbor to:   [{zero_index}] to Small disk index: [{left_neighbor}].  Value: {self.small_disks[left_neighbor]}")
         
         return [left_jump_index, right_jump_index]
     
