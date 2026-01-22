@@ -1,4 +1,5 @@
 import sys
+import math
 
 """
 CMPT 355 - Group 2
@@ -32,6 +33,10 @@ class Disks:
         # Represented as Tuple, Since they are immutable and hashable.
         # set(), dict() are good to know here so that we can make sure we havent visited the same state before
         self.small_disks = tuple(small_disks_data) 
+        self.zero_index = self.small_disks.index(0)
+        
+        # highest value of small disks
+        self.highest_small = int(math.sqrt(n-1))
 
     def print_details(self):
         # Print Statement for some deets
@@ -39,14 +44,15 @@ class Disks:
         print(f"System Size (N):    {self.n}")
         print(f"(Large Disks):      {self.large_disks}")
         print(f"(Small Disks):      {self.small_disks}")
+        print(f"(Zero Index):       {self.zero_index}")
+        print(f"(Highest Small):    {self.highest_small}")
         print("==================")
-
+    
     def get_valid_moves(self):
         # TODO: 
         # Double check if this is correct - Aidan
 
-        # Locate empty spot
-        zero_index = self.small_disks.index(0)
+        zero_index = self.zero_index
 
         # Refer to large disk data to see how far we can jump
         jump_distance = self.large_disks[zero_index]
@@ -58,8 +64,8 @@ class Disks:
         # Left is subtraction
         right_jump_index = (zero_index + jump_distance) % self.n
         left_jump_index  = (zero_index - jump_distance) % self.n
-        right_neighbor   = (zero_index + 1)
-        left_neighbor    = (zero_index - 1)
+        right_neighbor   = (zero_index + 1) % self.n
+        left_neighbor    = (zero_index - 1) % self.n
         
         # Debug Print
         print(f"0 is at: [{zero_index}]")
@@ -71,6 +77,25 @@ class Disks:
         print(f"Left neighbor to:   [{zero_index}] to Small disk index: [{left_neighbor}].  Value: {self.small_disks[left_neighbor]}")
         
         return [left_jump_index, right_jump_index]
+
+    def is_solved(self):
+        last_disk = 0
+        
+        for i in range(self.n + 1):
+            current_disk = self.small_disks[(i + self.zero_index) % self.n]
+            if last_disk == self.highest_small:
+                if not((current_disk == self.highest_small) or (current_disk == 0)):
+                    print(current_disk)
+                    print(last_disk)
+                    print("Not solved")
+                    return False
+            elif not(last_disk <= current_disk <= (1 + last_disk)) :
+                print("Not solved")
+                return False
+            last_disk = current_disk
+            print(last_disk)
+        print("Solved")
+        return True
     
 def main():
     
@@ -116,6 +141,7 @@ def main():
     
     puzzle.print_details()
     puzzle.get_valid_moves()
+    puzzle.is_solved()
     
 if __name__ == "__main__":
     main()
