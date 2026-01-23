@@ -147,7 +147,22 @@ class Disks:
             last_disk = current_disk
         print(f"{small_disks_state.small_disks} is a solution!")
         return True
-    
+   
+    def solve(self):
+        # Test run of algo, set limit on # of iterations since no way to stop loops currently
+        for i in range(50):
+            fringe = self.fringe
+            if fringe.empty():
+                print("Fringe empty, no solution found")
+                return False
+            next_node = fringe.get()
+            print(f"Checking {next_node.small_disks}")
+            if self.is_solved(next_node):
+                return True
+            children = self.create_children(next_node)
+            for child in children:
+                fringe.put(child)
+
 def main():
     
     # Command Line Arg
@@ -192,20 +207,8 @@ def main():
     
     puzzle.print_details()
     # puzzle.get_valid_moves()
+    puzzle.solve()
 
-    # Test run of algo, set limit on # of iterations since no way to stop loops currently
-    for i in range(50):
-        fringe = puzzle.fringe
-        if fringe.empty():
-            print("Fringe empty, no solution found")
-            return False
-        next_node = fringe.get()
-        print(f"Checking {next_node.small_disks}")
-        if puzzle.is_solved(next_node):
-            return True
-        children = puzzle.create_children(next_node)
-        for child in children:
-            fringe.put(child)
 
 if __name__ == "__main__":
     main()
