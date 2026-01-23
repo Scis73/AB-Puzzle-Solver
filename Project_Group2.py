@@ -23,6 +23,14 @@ Run program by:
 
 class Disks:
     def __init__(self, n, large_disks_data, small_disks_data):
+        # TODO - Steve
+        # For breadth-first graph, closed list of already seen states to avoid loops, hash table?
+        # Some methods should probably be moved into SmallDisks class, also need to add more data (parent etc) to SmallDisks
+        # Rework create_children so that we can use tuples for small disk state
+        # Rename a bunch of variables probably for clarity
+        # If we want to do A*, change fringe from queue to heap
+        # For A*, need to decide on/implement a heuristic
+
         self.n = n
 
         # Large Disks
@@ -39,8 +47,9 @@ class Disks:
         # parent to create child, can change back to tuple if create_children reworked - Steve
         self.fringe = Queue() 
         self.fringe.put(self.SmallDisks(list(small_disks_data)))
+       
         
-        # number of unique values on small disks
+        # Number of unique values on small disks
         self.unique_n = int(math.sqrt(n-1)) + 1
         
 
@@ -126,16 +135,17 @@ class Disks:
     def add_to_fringe(self, small_disks_state):
         self.fringe.put(small_disks_state)
 
-    def is_solved(self, small_disks_data):
-        last_disk = small_disks_data.small_disks[-1]
+    def is_solved(self, small_disks_state):
+        # Loop around small disks list to see if all neighbours are correct
+        last_disk = small_disks_state.small_disks[-1]
         
         for i in range(self.n):
-            current_disk = small_disks_data.small_disks[i]
+            current_disk = small_disks_state.small_disks[i]
             if not((current_disk == last_disk) or (current_disk == ((last_disk + 1) % self.unique_n))):
                 print("Not solved")
                 return False
             last_disk = current_disk
-        print(f"{small_disks_data.small_disks} is a solution!")
+        print(f"{small_disks_state.small_disks} is a solution!")
         return True
     
 def main():
