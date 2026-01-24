@@ -150,18 +150,38 @@ class Disks:
    
     def solve(self):
         # Test run of algo, set limit on # of iterations since no way to stop loops currently
+        closed_set=[]
         for i in range(50):
+            print(f"closed: {closed_set}")
             fringe = self.fringe
             if fringe.empty():
                 print("Fringe empty, no solution found")
                 return False
             next_node = fringe.get()
             print(f"Checking {next_node.small_disks}")
-            if self.is_solved(next_node):
-                return True
-            children = self.create_children(next_node)
-            for child in children:
-                fringe.put(child)
+            seen=False
+            og_list=next_node.small_disks
+            for n in range(10):
+                # Rotate right by 2
+                rotated_list = og_list[-n:] + og_list[:-n]
+                for closed in closed_set:
+                    if closed==rotated_list:
+                        seen=True
+                        break
+
+                if seen:
+                    break
+            if seen:
+                print("Already seen this state, skipping")
+                continue
+
+            else:
+                if self.is_solved(next_node):
+                    return True
+                closed_set.append(next_node.small_disks)
+                children = self.create_children(next_node)
+                for child in children:
+                    fringe.put(child)
 
 def main():
     
