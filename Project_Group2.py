@@ -1,5 +1,6 @@
 import sys
-
+import math
+from queue import Queue
 """
 CMPT 355 - Group 2
 AB Puzzle
@@ -22,31 +23,63 @@ Run program by:
 
 class Disks:
     def __init__(self, n, large_disks_data, small_disks_data):
+        # TODO - Steve
+        # For breadth-first graph, closed list of already seen states to avoid loops, hash table?
+        # Some methods should probably be moved into SmallDisks class, also need to add more data (parent etc) to SmallDisks
+        # Rework create_children so that we can use tuples for small disk state
+        # Rename a bunch of variables probably for clarity
+        # If we want to do A*, change fringe from queue to heap
+        # For A*, need to decide on/implement a heuristic
+
         self.n = n
 
         # Large Disks
         # Represented as list, as they dont change. 
         self.large_disks = list(large_disks_data)
 
+
         # Small Disks
         # Represented as Tuple, Since they are immutable and hashable.
         # set(), dict() are good to know here so that we can make sure we havent visited the same state before
-        self.small_disks = tuple(small_disks_data) 
+
+        # Changed to have queue/fringe with small disks data as initial state
+        # Changed small_disks to list instead of tuple for creating children since need to copy and then change 
+        # parent to create child, can change back to tuple if create_children reworked - Steve
+        self.fringe = Queue() 
+        self.fringe.put(self.SmallDisks(list(small_disks_data)))
+       
+        
+        # Number of unique values on small disks
+        self.unique_n = int(math.sqrt(n-1)) + 1
+        
+
+    # Do we want a separate class for state of small disks, so we can create multiple states without recreating
+    # whole structure every time? added it for now - Steve
+    # SmallDisks as graph nodes basically
+    class SmallDisks:
+        def __init__(self, small_disks_data):
+            self.small_disks = small_disks_data
+            # Moved initialization of zero_index here since it might be needed for multiple functions - Steve
+            self.zero_index = self.small_disks.index(0)
+            # self.parent?
+            # self.children?
+
+        
 
     def print_details(self):
         # Print Statement for some deets
         print("==================")
         print(f"System Size (N):    {self.n}")
         print(f"(Large Disks):      {self.large_disks}")
-        print(f"(Small Disks):      {self.small_disks}")
+        print(f"(Small Disks):      {self.fringe}")
+        print(f"(Unique n):         {self.unique_n}")
         print("==================")
-
-    def get_valid_moves(self):
+    
+    def get_valid_moves(self, small_disks_state):
         # TODO: 
         # Double check if this is correct - Aidan
 
-        # Locate empty spot
-        zero_index = self.small_disks.index(0)
+        zero_index = small_disks_state.zero_index
 
         # Refer to large disk data to see how far we can jump
         jump_distance = self.large_disks[zero_index]
@@ -58,20 +91,78 @@ class Disks:
         # Left is subtraction
         right_jump_index = (zero_index + jump_distance) % self.n
         left_jump_index  = (zero_index - jump_distance) % self.n
-        right_neighbor   = (zero_index + 1)
-        left_neighbor    = (zero_index - 1)
+        right_neighbor   = (zero_index + 1) % self.n
+        left_neighbor    = (zero_index - 1) % self.n
         
         # Debug Print
         print(f"0 is at: [{zero_index}]")
         print(f"Large Disk at 0 is: [{jump_distance}]")
         print("==================")
-        print(f"Right Jump to:      [{zero_index}] to Small disk index: [{right_jump_index}].  Value: {self.small_disks[right_jump_index]}")
-        print(f"Left Jump to:       [{zero_index}] to Small disk index: [{left_jump_index}].  Value: {self.small_disks[left_jump_index]}")
-        print(f"Right neighbor to:  [{zero_index}] to Small disk index: [{right_neighbor}].  Value: {self.small_disks[right_neighbor]}")
-        print(f"Left neighbor to:   [{zero_index}] to Small disk index: [{left_neighbor}].  Value: {self.small_disks[left_neighbor]}")
+        #print(f"Right Jump to:      [{zero_index}] to Small disk index: [{right_jump_index}].  Value: {self.small_disks[right_jump_index]}")
+        #print(f"Left Jump to:       [{zero_index}] to Small disk index: [{left_jump_index}].  Value: {self.small_disks[left_jump_index]}")
+        #print(f"Right neighbor to:  [{zero_index}] to Small disk index: [{right_neighbor}].  Value: {self.small_disks[right_neighbor]}")
+        #print(f"Left neighbor to:   [{zero_index}] to Small disk index: [{left_neighbor}].  Value: {self.small_disks[left_neighbor]}")
         
-        return [left_jump_index, right_jump_index]
-    
+        if left_jump_index == left_neighbor: 
+            # if large disk is 1, neighbor and jump are same move
+            return [left_neighbor, right_neighbor]
+
+        return [left_jump_index, left_neighbor, right_neighbor, right_jump_index]
+
+        
+    def create_children(self, small_disks_state):
+        # find possible moves of a given state and generate resulting states
+        # This won't work as is, need to rewrite move_disk to create new object 
+        # and rewrite get_valid_moves to take any state of small disks
+
+        # Should this add children directly to queue instead?
+        children = []
+        moves = self.get_valid_moves(small_disks_state)
+        for move in moves:
+            children.append(self.move_disk(move, small_disks_state))
+        
+        return children
+
+    def move_disk(self, target_i, small_disks_state):
+        # Create copy of state, then swap values of zero_index and target in copy and return it
+        zero_index = small_disks_state.zero_index
+        new_state = self.SmallDisks(list(small_disks_state.small_disks))
+        new_state.small_disks[zero_index] = new_state.small_disks[target_i]
+        new_state.small_disks[target_i] = 0
+        new_state.zero_index = target_i
+        return new_state
+
+    def add_to_fringe(self, small_disks_state):
+        self.fringe.put(small_disks_state)
+
+    def is_solved(self, small_disks_state):
+        # Loop around small disks list to see if all neighbours are correct
+        last_disk = small_disks_state.small_disks[-1]
+        
+        for i in range(self.n):
+            current_disk = small_disks_state.small_disks[i]
+            if not((current_disk == last_disk) or (current_disk == ((last_disk + 1) % self.unique_n))):
+                print("Not solved")
+                return False
+            last_disk = current_disk
+        print(f"{small_disks_state.small_disks} is a solution!")
+        return True
+   
+    def solve(self):
+        # Test run of algo, set limit on # of iterations since no way to stop loops currently
+        for i in range(50):
+            fringe = self.fringe
+            if fringe.empty():
+                print("Fringe empty, no solution found")
+                return False
+            next_node = fringe.get()
+            print(f"Checking {next_node.small_disks}")
+            if self.is_solved(next_node):
+                return True
+            children = self.create_children(next_node)
+            for child in children:
+                fringe.put(child)
+
 def main():
     
     # Command Line Arg
@@ -115,7 +206,9 @@ def main():
     puzzle = Disks(n_arg, large_disks_input, small_disks_input)
     
     puzzle.print_details()
-    puzzle.get_valid_moves()
-    
+    # puzzle.get_valid_moves()
+    puzzle.solve()
+
+
 if __name__ == "__main__":
     main()
