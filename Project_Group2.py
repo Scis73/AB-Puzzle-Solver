@@ -61,6 +61,8 @@ class Disks:
             self.small_disks = small_disks_data
             # Moved initialization of zero_index here since it might be needed for multiple functions - Steve
             self.zero_index = self.small_disks.index(0)
+            self.trace_back_state = [[small_disks_data]]
+            self.trace_back_move = []
             # self.parent?
             # self.children?
 
@@ -105,9 +107,9 @@ class Disks:
         
         if left_jump_index == left_neighbor: 
             # if large disk is 1, neighbor and jump are same move
-            return [left_neighbor, right_neighbor]
+            return [[left_neighbor, right_neighbor],["left by 1","right by 1"]]
 
-        return [left_jump_index, left_neighbor, right_neighbor, right_jump_index]
+        return [[left_jump_index, left_neighbor, right_neighbor, right_jump_index], ["left by "+str(jump_distance), "left by 1", "right by 1", "right by "+str(jump_distance)]]
 
         
     def create_children(self, small_disks_state):
@@ -117,11 +119,12 @@ class Disks:
 
         # Should this add children directly to queue instead?
         children = []
-        moves = self.get_valid_moves(small_disks_state)
-        for move in moves:
+        move_states = (self.get_valid_moves(small_disks_state))[0]
+        move_made=(self.get_valid_moves(small_disks_state))[1]
+        for move in move_states:
             children.append(self.move_disk(move, small_disks_state))
         
-        return children
+        return [children,move_made]
 
     def move_disk(self, target_i, small_disks_state):
         # Create copy of state, then swap values of zero_index and target in copy and return it
@@ -152,26 +155,33 @@ class Disks:
         # Test run of algo, set limit on # of iterations since no way to stop loops currently
         closed_set=[]
         for i in range(50):
-            print(f"closed: {closed_set}")
+            #print(f"closed: {closed_set}")
             fringe = self.fringe
             if fringe.empty():
                 print("Fringe empty, no solution found")
                 return False
             next_node = fringe.get()
             print(f"Checking {next_node.small_disks}")
-            seen=check_closed(closed_set,next_node.small_disks)
+            seen=rep_check(closed_set,next_node.small_disks)
             if seen:
                 print("Already seen this state, skipping")
                 continue
             else:
                 if self.is_solved(next_node):
+                    print()
+                    print(f"States to solution:\n {next_node.trace_back_state }\n")
+                    print()
+                    print(f"Moves to solution:\n {next_node.trace_back_move}\n")
                     return True
                 closed_set.append(next_node.small_disks)
-                children = self.create_children(next_node)
-                for child in children:
+                children = (self.create_children(next_node))[0]
+                move_made=(self.create_children(next_node))[1]
+                for i, child in enumerate(children):
+                    child.trace_back_state = next_node.trace_back_state + [child.small_disks]
+                    child.trace_back_move = next_node.trace_back_move + [move_made[i]]
                     fringe.put(child)
 
-def check_closed(closed_set,og_list):
+def rep_check(closed_set,og_list):
     seen=False
     l= len(og_list)
     for n in range(l):
