@@ -159,22 +159,10 @@ class Disks:
                 return False
             next_node = fringe.get()
             print(f"Checking {next_node.small_disks}")
-            seen=False
-            og_list=next_node.small_disks
-            for n in range(10):
-                # Rotate right by 2
-                rotated_list = og_list[-n:] + og_list[:-n]
-                for closed in closed_set:
-                    if closed==rotated_list:
-                        seen=True
-                        break
-
-                if seen:
-                    break
+            seen=check_closed(closed_set,next_node.small_disks)
             if seen:
                 print("Already seen this state, skipping")
                 continue
-
             else:
                 if self.is_solved(next_node):
                     return True
@@ -183,8 +171,57 @@ class Disks:
                 for child in children:
                     fringe.put(child)
 
-def main():
+def check_closed(closed_set,og_list):
+    seen=False
+    l= len(og_list)
+    for n in range(l):
+        # Rotate right by n each time
+            rotated_list = og_list[-n:] + og_list[:-n]
+            #print(f"Rotated: {rotated_list}")
+            for closed in closed_set:
+                if closed==rotated_list:
+                    seen=True
+                    break
+            if seen:
+                break
+    return seen
+
     
+def main():
+    '''
+    # Test check_closed function
+    seen0=check_closed([[0,1,2,3],[0,3,1,2]],[0, 1,2,3])
+    if seen0==False:
+        print("Error in check_closed()")
+    else:
+        print("check_closed() passed test 0")
+    seen1=check_closed([[0,1,2,3],[0,3,1,2]],[1,2,3,0])
+    if seen1==False:
+        print("Error in check_closed()")
+    else:
+        print("check_closed() passed test 1")
+    seen2=check_closed([[0,1,2,3],[0,3,1,2]], [2, 3,0,1])
+    if seen2==False:
+        print("Error in check_closed()")
+    else:
+        print("check_closed() passed test 2")
+    seen3=check_closed([[0,1,2,3],[0,3,1,2]], [3, 0, 1, 2])
+    if seen3==False:
+        print("Error in check_closed()")
+    else:
+        print("check_closed() passed test 3")
+    seen4=check_closed([[0,1,2,3],[0,3,1,2]], [0, 1, 2, 3])
+    if seen4==False:
+        print("Error in check_closed()")
+    else:
+        print("check_closed() passed test 4")
+    seen5=check_closed([[0,1,2,3],[0,3,1,2]], [0,1, 3, 2])
+    if seen5==True:
+        print("Error in check_closed()")
+    else:
+        print("check_closed() passed test 5")
+    '''
+
     # Command Line Arg
     if len(sys.argv) < 2:
         print("Error: Missing argument.")
