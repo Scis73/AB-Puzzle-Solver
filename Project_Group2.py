@@ -153,7 +153,7 @@ class Disks:
    
     def solve(self):
         # Test run of algo, set limit on # of iterations since no way to stop loops currently
-        closed_set=[]
+        closed_set=set()
         for i in range(50):
             #print(f"closed: {closed_set}")
             fringe = self.fringe
@@ -173,7 +173,7 @@ class Disks:
                     print()
                     print(f"Moves to solution:\n {next_node.trace_back_move}\n")
                     return True
-                closed_set.append(next_node.small_disks)
+                closed_set.add(tuple(next_node.small_disks))
                 children = (self.create_children(next_node))[0]
                 move_made=(self.create_children(next_node))[1]
                 for i, child in enumerate(children):
@@ -187,13 +187,8 @@ def rep_check(closed_set,og_list):
     for n in range(l):
         # Rotate right by n each time
             rotated_list = og_list[-n:] + og_list[:-n]
-            #print(f"Rotated: {rotated_list}")
-            for closed in closed_set:
-                if closed==rotated_list:
+            if tuple(rotated_list) in closed_set:
                     seen=True
-                    break
-            if seen:
-                break
     return seen
 
     
