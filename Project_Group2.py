@@ -154,8 +154,9 @@ class Disks:
     def solve(self):
         # Test run of algo, set limit on # of iterations since no way to stop loops currently
         closed_set=set()
-        for i in range(50):
+        #for i in range(50):
             #print(f"closed: {closed_set}")
+        while True:
             fringe = self.fringe
             if fringe.empty():
                 print("Fringe empty, no solution found")
@@ -182,14 +183,14 @@ class Disks:
                     fringe.put(child)
 
 def rep_check(closed_set,og_list):
-    seen=False
-    l= len(og_list)
-    for n in range(l):
+    #seen=False
+    #l= len(og_list)
+    #for n in range(l):
         # Rotate right by n each time
-            rotated_list = og_list[-n:] + og_list[:-n]
-            if tuple(rotated_list) in closed_set:
-                    seen=True
-    return seen
+     #       rotated_list = og_list[-n:] + og_list[:-n]
+   # if tuple(rotated_list) in closed_set:
+    #        seen=True
+    return tuple(og_list) in closed_set
 
     
 def main():
