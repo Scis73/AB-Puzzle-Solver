@@ -1,9 +1,18 @@
 import sys
 import math
+from queue import Queueimport math
 import heapq
 
 class Disks:
     def __init__(self, n, large_disks_data, small_disks_data):
+        # TODO - Steve
+        # For breadth-first graph, closed list of already seen states to avoid loops, hash table?
+        # Some methods should probably be moved into SmallDisks class, also need to add more data (parent etc) to SmallDisks
+        # Rework create_children so that we can use tuples for small disk state
+        # Rename a bunch of variables probably for clarity
+        # If we want to do A*, change fringe from queue to heap
+        # For A*, need to decide on/implement a heuristic
+
         self.n = n
         self.large_disks = list(large_disks_data)
         self.unique_n = int(math.sqrt(n-1)) + 1
@@ -138,6 +147,41 @@ def rep_check(closed_set, og_list):
 
     
 def main():
+    '''
+    # Test check_closed function
+    seen0=check_closed([[0,1,2,3],[0,3,1,2]],[0, 1,2,3])
+    if seen0==False:
+        print("Error in check_closed()")
+    else:
+        print("check_closed() passed test 0")
+    seen1=check_closed([[0,1,2,3],[0,3,1,2]],[1,2,3,0])
+    if seen1==False:
+        print("Error in check_closed()")
+    else:
+        print("check_closed() passed test 1")
+    seen2=check_closed([[0,1,2,3],[0,3,1,2]], [2, 3,0,1])
+    if seen2==False:
+        print("Error in check_closed()")
+    else:
+        print("check_closed() passed test 2")
+    seen3=check_closed([[0,1,2,3],[0,3,1,2]], [3, 0, 1, 2])
+    if seen3==False:
+        print("Error in check_closed()")
+    else:
+        print("check_closed() passed test 3")
+    seen4=check_closed([[0,1,2,3],[0,3,1,2]], [0, 1, 2, 3])
+    if seen4==False:
+        print("Error in check_closed()")
+    else:
+        print("check_closed() passed test 4")
+    seen5=check_closed([[0,1,2,3],[0,3,1,2]], [0,1, 3, 2])
+    if seen5==True:
+        print("Error in check_closed()")
+    else:
+        print("check_closed() passed test 5")
+    '''
+
+    # Command Line Arg
     if len(sys.argv) < 2:
         print("Error: Missing argument.")
         print("Usage: ./AB <number_of_disks>")
@@ -168,6 +212,9 @@ def main():
         sys.exit(1)
         
     puzzle = Disks(n_arg, large_disks_input, small_disks_input)
+    
+    puzzle.print_details()
+    # puzzle.get_valid_moves()
     puzzle.solve()
 
 
