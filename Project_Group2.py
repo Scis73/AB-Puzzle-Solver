@@ -1,6 +1,5 @@
 import sys
 import math
-from queue import Queueimport math
 import heapq
 
 class Disks:
