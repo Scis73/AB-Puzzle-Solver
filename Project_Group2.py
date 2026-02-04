@@ -201,7 +201,9 @@ class Disks:
         #new_data = list(current_node.small_disks)
         old_tuple = current_node.small_disks
         zero_index = current_node.zero_index
+        # Create new tuple with values in zero_index and target_i swapped
         new_tuple = tuple(old_tuple[zero_index] if x == target_i else old_tuple[target_i] if x == zero_index else old_tuple[x] for x in range(self.n))
+        
         # Swap '0' with the target
         #new_data[zero_index], new_data[target_i] = new_data[target_i], new_data[zero_index]
         
