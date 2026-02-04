@@ -1,19 +1,33 @@
 import sys
 import math
-import heapq
+import heapq as hq
+
+"""
+CMPT 355 - Group 2
+AB Puzzle
+
+Aidan, Sam, Steve, Braeden
+
+Usage:
+    ./AB <number_of_disks>
+    (Then two inputs)
+
+Run program by:
+    1) cd into git folder
+    2) '$ python3 Project_Group2.py 10'
+    2a) You can also pipe in the test_input.txt by:
+        2a) '$ python3 Project_Group2.py 10 < test_input.txt'
+    3) Read results
+
+
+"""
 
 class Disks:
     def __init__(self, n, large_disks_data, small_disks_data):
-        # TODO - Steve
-        # For breadth-first graph, closed list of already seen states to avoid loops, hash table?
-        # Some methods should probably be moved into SmallDisks class, also need to add more data (parent etc) to SmallDisks
-        # Rework create_children so that we can use tuples for small disk state
-        # Rename a bunch of variables probably for clarity
-        # If we want to do A*, change fringe from queue to heap
-        # For A*, need to decide on/implement a heuristic
 
         self.n = n
-        self.large_disks = list(large_disks_data)
+        self.large_disks = list(large_disks_data) 
+        
         self.unique_n = int(math.sqrt(n-1)) + 1
         self.fringe = []
         self.counter = 0
@@ -21,17 +35,44 @@ class Disks:
         initial_state.g = 0
         initial_state.h = self.heuristic(initial_state)
         initial_state.f = initial_state.g + initial_state.h
-        heapq.heappush(self.fringe, (initial_state.f, self.counter, initial_state))
+        # hq.heappush(self.fringe, (initial_state.f, self.counter, initial_state)) # Braeden version
+        hq.heappush(self.fringe, initial_state) # Steve version
 
     class SmallDisks:
         def __init__(self, small_disks_data):
             self.small_disks = small_disks_data
             self.zero_index = self.small_disks.index(0)
+            # This is going to use a lot of memory for bigger problems
+            # 10 nodes at depth 10 = 10 lists of 10 + more lists for shallower nodes
+            # Can probably just track parent of each node then trace back to root once solution found
             self.trace_back_state = [small_disks_data]
             self.trace_back_move = []
             self.g = 0
             self.h = 0
             self.f = 0
+            # self.parent?
+            # self.children?
+
+        def __lt__(self, other):
+            # Override less than for SmallDisks to compare their costs, needed for heapq
+            if self.f == other.f:
+                return self.h < other.h
+            return self.f < other.f
+
+    def print_children(self, current, children):
+        # takes list of children of current node and prints them
+        print("Children of",*current.small_disks, "are")
+        for child in children:
+            print(*child.small_disks)
+
+    def print_fringe(self):
+        print("Current fringe is", self.fringe)
+
+    def print_solution(self, trace_back_state):
+        # Takes list of states on path to solution and prints them
+        print("Solution is")
+        for state in trace_back_state:
+            print(*state)
 
     def heuristic(self, small_disks_state):
         disks = small_disks_state.small_disks
@@ -63,6 +104,15 @@ class Disks:
         right_neighbor   = (zero_index + 1) % self.n
         left_neighbor    = (zero_index - 1) % self.n
         
+        # Debug Print
+        #print(f"0 is at: [{zero_index}]")
+        #print(f"Large Disk at 0 is: [{jump_distance}]")
+        #print("==================")
+        #print(f"Right Jump to:      [{zero_index}] to Small disk index: [{right_jump_index}].  Value: {self.small_disks[right_jump_index]}")
+        #print(f"Left Jump to:       [{zero_index}] to Small disk index: [{left_jump_index}].  Value: {self.small_disks[left_jump_index]}")
+        #print(f"Right neighbor to:  [{zero_index}] to Small disk index: [{right_neighbor}].  Value: {self.small_disks[right_neighbor]}")
+        #print(f"Left neighbor to:   [{zero_index}] to Small disk index: [{left_neighbor}].  Value: {self.small_disks[left_neighbor]}")
+        
         if left_jump_index == left_neighbor: 
             return [[left_neighbor, right_neighbor],["left by 1","right by 1"]]
 
@@ -89,8 +139,19 @@ class Disks:
         return new_state
 
     def is_solved(self, small_disks_state):
-        zero_pos = small_disks_state.zero_index
-        
+        # Steve version
+        last_disk = small_disks_state.small_disks[-1] 
+        for i in range(self.n):
+            current_disk = small_disks_state.small_disks[i]
+            if not((current_disk == last_disk) or (current_disk == ((last_disk + 1) % self.unique_n))):
+        #        print("Not solved")
+                return False
+            last_disk = current_disk
+        #print(f"{small_disks_state.small_disks} is a solution!")
+        return True
+    '''
+    def is_solved(self, small_disks_state):
+        # Braeden version
         ordered = []
         for i in range(1, self.n):
             ordered.append(small_disks_state.small_disks[(zero_pos + i) % self.n])
@@ -110,8 +171,32 @@ class Disks:
                 return False
         
         return True
-   
+        '''
     def solve(self):
+        # Steve version
+        closed_set=set()
+        fringe = self.fringe
+        while fringe:
+            next_node = hq.heappop(fringe)
+            print(f"Checking {next_node.small_disks}")
+            seen=rep_check(closed_set,next_node.small_disks)
+            if seen:
+                continue
+            else:
+                if self.is_solved(next_node):
+                    self.print_solution(next_node.trace_back_state)
+                    return True
+                closed_set.add(tuple(next_node.small_disks))
+                children, move_made = (self.create_children(next_node))
+                #move_made=(self.create_children(next_node))[1]
+                self.print_children(next_node, children)
+                for i, child in enumerate(children):
+                    child.trace_back_state = next_node.trace_back_state + [child.small_disks]
+                    child.trace_back_move = next_node.trace_back_move + [move_made[i]]
+                    hq.heappush(fringe, child)
+    ''' 
+    def solve(self):
+        # Braeden version
         closed_set = set()
         while self.fringe:
             _, _, next_node = heapq.heappop(self.fringe)
@@ -134,17 +219,10 @@ class Disks:
                     heapq.heappush(self.fringe, (child.f, self.counter, child))
         print("No solution")
         return False
-
+    '''
 def rep_check(closed_set, og_list):
-    seen = False
-    l = len(og_list)
-    for n in range(l):
-        rotated_list = og_list[-n:] + og_list[:-n]
-        if tuple(rotated_list) in closed_set:
-            seen = True
-    return seen
+    return tuple(og_list) in closed_set
 
-    
 def main():
     '''
     # Test check_closed function
@@ -212,7 +290,7 @@ def main():
         
     puzzle = Disks(n_arg, large_disks_input, small_disks_input)
     
-    puzzle.print_details()
+    # puzzle.print_details()
     # puzzle.get_valid_moves()
     puzzle.solve()
 
