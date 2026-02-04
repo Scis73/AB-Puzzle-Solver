@@ -9,7 +9,7 @@ AB Puzzle
 Aidan, Sam, Steve, Braeden
 
 Usage:
-    ./AB <number_of_disks>
+    ./Project_Group2 <number_of_disks>
     (Then two inputs)
 
 Run program by:
@@ -20,44 +20,83 @@ Run program by:
     3) Read results
 
 
+Algo Details:
+- Heuristic (h): Sum of Circular Manhattan Distances (How far each tile is from a valid spot)
+
 """
 
 class Disks:
     def __init__(self, n, large_disks_data, small_disks_data):
-
-        self.n = n
-        self.large_disks = list(large_disks_data) 
         
-        self.unique_n = int(math.sqrt(n-1)) + 1
+        self.n = n
+        # Store as static list
+        self.large_disks = list(large_disks_data)
+        # Store Init State for print
+        self.start_state = list(small_disks_data)
+        
+        # Determine how many 1s, 2s, etc.
+        unique_values = set(small_disks_data)
+        if 0 in unique_values: # Dont count 0 of course
+            unique_values.remove(0)
+        self.unique_n = len(unique_values)
+        
+        # Goal State Calculation
+        # Pre Clac the winning state to make checking is_solved() fast.
+        # Expected: n 1s, n 2s, ... n ns, followed by 0. 
+        # Yes the Zero can be anywhere but just easier if we keep it in the end like in the lab spec
+        self.goal_state_list = []
+        for i in range(1, self.unique_n + 1):
+            self.goal_state_list.extend([i] * self.unique_n)
+        self.goal_state_list.append(0)
+        
+        # Convert to tuple for comparison
+        self.goal_state = tuple(self.goal_state_list)
+        
+        # Fringe (Banger Festival Btw :D )
         self.fringe = []
+        
+        
         self.counter = 0
-        initial_state = self.SmallDisks(list(small_disks_data))
+        
+        # Initial Node 
+        initial_state = self.SmallDisks(list(small_disks_data), parent=None, g=0)
         initial_state.g = 0
         initial_state.h = self.heuristic(initial_state)
         initial_state.f = initial_state.g + initial_state.h
         # hq.heappush(self.fringe, (initial_state.f, self.counter, initial_state)) # Braeden version
         hq.heappush(self.fringe, initial_state) # Steve version
 
+    # Inner Class represents one node in tree
     class SmallDisks:
-        def __init__(self, small_disks_data):
+        def __init__(self, small_disks_data, parent=None, g=0):
             self.small_disks = small_disks_data
+            
+            # Parent Pointer, this will save a lot on mem
+            self.parent = parent
+            
+            # Find 0 (empty slot) immediately
             self.zero_index = self.small_disks.index(0)
-            # This is going to use a lot of memory for bigger problems
-            # 10 nodes at depth 10 = 10 lists of 10 + more lists for shallower nodes
-            # Can probably just track parent of each node then trace back to root once solution found
-            self.trace_back_state = [small_disks_data]
-            self.trace_back_move = []
-            self.g = 0
-            self.h = 0
-            self.f = 0
-            # self.parent?
-            # self.children?
+            
+            
+            # A* Costs
+            self.g = g # Depth, Cost So Far
+            self.h = 0 # Heuristic -> Cost to goal
+            self.f = 0 # Total Score (g + h)
+            
 
         def __lt__(self, other):
-            # Override less than for SmallDisks to compare their costs, needed for heapq
-            if self.f == other.f:
+            # Needed for the Priority Queue to sort nodes.
+            # We compare 'f' scores.
+            if self.f != other.f:
+                return self.f < other.f
+            # TIE BREAKER: If f scores are equal, compare h scores (Greedy)
+            if self.h != other.h:
                 return self.h < other.h
-            return self.f < other.f
+            # FINAL TIE BREAKER: Compare the actual lists to prevent crashes (Happend...)
+            return self.small_disks < other.small_disks
+        
+        
+    # ============ Helper Functions 
 
     def print_children(self, current, children):
         # takes list of children of current node and prints them
@@ -68,31 +107,57 @@ class Disks:
     def print_fringe(self):
         print("Current fringe is", self.fringe)
 
-    def print_solution(self, trace_back_state):
-        # Takes list of states on path to solution and prints them
+    def print_solution(self, end_node):
+        # Traces back from the end_node to the start using parent pointers,
+        # then prints the path.
+        path = []
+        current = end_node
+        while current:
+            path.append(current.small_disks)
+            current = current.parent
+            
+        # Path is currently goal so just reverse it
+        path.reverse()
+        
         print("Solution is")
-        for state in trace_back_state:
-            print(*state)
+        
+        for state in path:
+            # Print list as space-separated string
+            print(" ".join(map(str, state)))
 
     def heuristic(self, small_disks_state):
-        disks = small_disks_state.small_disks
-        violations = 0
-        for i in range(self.n):
-            current = disks[i]
-            next_disk = disks[(i + 1) % self.n]
-            if current == 0 or next_disk == 0:
-                continue
-            if current != next_disk:
-                expected_next = (current % self.unique_n) + 1
-                if next_disk != expected_next:
-                    violations += 1
-        return violations // 2
+        # Estimate Distance to goal using Manhattan Distance but just for a circle.
+        # Calcs how far every tile is from target pos.
+        
+        total_distance = 0
+        state = small_disks_state.small_disks
+        n_group_size = self.unique_n
+        
+        for current_idx, val in enumerate(state):
+            if val == 0: continue # Dont count empty spot
+            
+            # We have to calculate this value where it should ROUGHLY be. 
+            # For example we estimate at the start of its group.
+            # If we have 3 unique values and we want to estimate where the 2s go
+            # (2-1) * 3 = Index 3, which is ROUGHLY where the start of 2s are. 
+            target_group_start = (val - 1) * n_group_size
+            
+            # Distance clockwise
+            diff = abs(current_idx - target_group_start)
+            # Since cirlce, distance is min of wrap-around
+            dist = min(diff, self.n - diff)
+            
+            total_distance += dist
+            
+        return total_distance
 
     def print_details(self):
         print("==================")
         print(f"System Size (N):    {self.n}")
         print(f"(Large Disks):      {self.large_disks}")
+        print(f"(Small Disk Start): {self.start_state}") 
         print(f"(Unique n):         {self.unique_n}")
+        print(f"(Goal State):       {self.goal_state}")
         print("==================")
     
     def get_valid_moves(self, small_disks_state):
@@ -105,39 +170,53 @@ class Disks:
         left_neighbor    = (zero_index - 1) % self.n
         
         # Debug Print
-        #print(f"0 is at: [{zero_index}]")
-        #print(f"Large Disk at 0 is: [{jump_distance}]")
-        #print("==================")
-        #print(f"Right Jump to:      [{zero_index}] to Small disk index: [{right_jump_index}].  Value: {self.small_disks[right_jump_index]}")
-        #print(f"Left Jump to:       [{zero_index}] to Small disk index: [{left_jump_index}].  Value: {self.small_disks[left_jump_index]}")
-        #print(f"Right neighbor to:  [{zero_index}] to Small disk index: [{right_neighbor}].  Value: {self.small_disks[right_neighbor]}")
-        #print(f"Left neighbor to:   [{zero_index}] to Small disk index: [{left_neighbor}].  Value: {self.small_disks[left_neighbor]}")
+        # print(f"0 is at: [{zero_index}]")
+        # print(f"Large Disk at 0 is: [{jump_distance}]")
+        # print("==================")
+        # print(f"Right Jump to:      [{zero_index}] to Small disk index: [{right_jump_index}].  Value: {self.small_disks[right_jump_index]}")
+        # print(f"Left Jump to:       [{zero_index}] to Small disk index: [{left_jump_index}].  Value: {self.small_disks[left_jump_index]}")
+        # print(f"Right neighbor to:  [{zero_index}] to Small disk index: [{right_neighbor}].  Value: {self.small_disks[right_neighbor]}")
+        # print(f"Left neighbor to:   [{zero_index}] to Small disk index: [{left_neighbor}].  Value: {self.small_disks[left_neighbor]}")
         
-        if left_jump_index == left_neighbor: 
-            return [[left_neighbor, right_neighbor],["left by 1","right by 1"]]
+        # [[left_jump_index, left_neighbor, right_neighbor, right_jump_index], ["left by "+str(jump_distance), "left by 1", "right by 1", "right by "+str(jump_distance)]]
+        moves = {right_jump_index, left_jump_index, right_neighbor, left_neighbor}
 
-        return [[left_jump_index, left_neighbor, right_neighbor, right_jump_index], ["left by "+str(jump_distance), "left by 1", "right by 1", "right by "+str(jump_distance)]]
-
+        return moves
         
-    def create_children(self, small_disks_state):
+    def create_children(self, current_node):
         children = []
-        move_states = (self.get_valid_moves(small_disks_state))[0]
-        move_made = (self.get_valid_moves(small_disks_state))[1]
-        for move in move_states:
-            children.append(self.move_disk(move, small_disks_state))
-        return [children, move_made]
+        valid_indices = self.get_valid_moves(current_node)
+        
+        for target_i in valid_indices:
+            children.append(self.move_disk(target_i, current_node))
+            
+        return children
 
-    def move_disk(self, target_i, small_disks_state):
-        zero_index = small_disks_state.zero_index
-        new_state = self.SmallDisks(list(small_disks_state.small_disks))
-        new_state.small_disks[zero_index] = new_state.small_disks[target_i]
-        new_state.small_disks[target_i] = 0
-        new_state.zero_index = target_i
-        new_state.g = small_disks_state.g + 1
-        new_state.h = self.heuristic(new_state)
-        new_state.f = new_state.g + new_state.h
-        return new_state
-
+    def move_disk(self, target_i, current_node):
+        # Create a copy of the list data
+        new_data = list(current_node.small_disks)
+        zero_index = current_node.zero_index
+        
+        # Swap '0' with the target
+        new_data[zero_index], new_data[target_i] = new_data[target_i], new_data[zero_index]
+        
+        # Create new Node
+        # Parent is 'current_node'
+        # Cost g increases by 1
+        new_node = self.SmallDisks(new_data, parent=current_node, g=current_node.g + 1)
+        
+        # Calculate Heuristic
+        new_node.h = self.heuristic(new_node)
+        new_node.f = new_node.g + new_node.h
+        
+        return new_node
+    
+    def is_solved(self, small_disks_state):
+        # Aidan Version
+        # Checks if current state matches the pre-calculated goal state
+        return tuple(small_disks_state.small_disks) == self.goal_state
+    
+    '''
     def is_solved(self, small_disks_state):
         # Steve version
         last_disk = small_disks_state.small_disks[-1] 
@@ -149,7 +228,6 @@ class Disks:
             last_disk = current_disk
         #print(f"{small_disks_state.small_disks} is a solution!")
         return True
-    '''
     def is_solved(self, small_disks_state):
         # Braeden version
         ordered = []
@@ -173,8 +251,49 @@ class Disks:
         return True
         '''
     def solve(self):
+        # Aidan Version
+        # Closed Set: Stores visited states to prevent loops.
+        closed_set = set()
+        loop_counter = 0
+            
+        while self.fringe:
+        # while loop_counter < 30: # Debug so print doesnt go crazy 
+            loop_counter += 1
+            # Get rid of node with lowest 'f' score
+            current_node = hq.heappop(self.fringe)
+            
+            print(f"\n--- LOOP {loop_counter} ---")
+            print(f"Checking Node:  {current_node.small_disks}")
+            print(f"Costs:          f={current_node.f} (g={current_node.g} + h={current_node.h})")
+            print(f"Fringe Size:    {len(self.fringe)}")
+            print(f"Closed Set:     {len(closed_set)}")
+            
+                
+            if self.is_solved(current_node):
+                self.print_solution(current_node)
+                return True
+            
+            # Then check to see if we have been to it already
+            state_tuple = tuple(current_node.small_disks)
+            if state_tuple in closed_set:
+                continue
+            closed_set.add(state_tuple)
+                
+            # Expand neighbors
+            children = self.create_children(current_node)
+                
+            for child in children:
+                hq.heappush(self.fringe, child)
+            
+        # Else No Solution
+        print("No Solution")
+            
+        return False
+    '''
+    def solve(self):
         # Steve version
         closed_set=set()
+        
         fringe = self.fringe
         while fringe:
             next_node = hq.heappop(fringe)
@@ -194,7 +313,7 @@ class Disks:
                     child.trace_back_state = next_node.trace_back_state + [child.small_disks]
                     child.trace_back_move = next_node.trace_back_move + [move_made[i]]
                     hq.heappush(fringe, child)
-    ''' 
+
     def solve(self):
         # Braeden version
         closed_set = set()
@@ -290,7 +409,7 @@ def main():
         
     puzzle = Disks(n_arg, large_disks_input, small_disks_input)
     
-    # puzzle.print_details()
+    puzzle.print_details()
     # puzzle.get_valid_moves()
     puzzle.solve()
 
