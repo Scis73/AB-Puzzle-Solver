@@ -43,11 +43,19 @@ class Disks:
         # Goal State Calculation
         # Pre Clac the winning state to make checking is_solved() fast.
         # Expected: n 1s, n 2s, ... n ns, followed by 0. 
-        # Yes the Zero can be anywhere but just easier if we keep it in the end like in the lab spec
+        # Yes the Zero can be anywhere but just easier if we keep it in the end like in the lab spec for now
         self.goal_state_list = []
         for i in range(1, self.unique_n + 1):
             self.goal_state_list.extend([i] * self.unique_n)
         self.goal_state_list.append(0)
+        
+        # Should create n goal states as it is a circle and 0 shouldn't be just on right side
+        # TODO:  
+        #   Generate all rotations
+        #   Change is_solved
+        #   Heuristic, mod the disks based on 0.
+        
+        # print(self.goal_state_list)
         
         # Convert to tuple for comparison
         self.goal_state = tuple(self.goal_state_list)
@@ -100,7 +108,7 @@ class Disks:
 
     def print_children(self, current, children):
         # takes list of children of current node and prints them
-        print("Children of",*current.small_disks, "are")
+        print("Children of: [",*current.small_disks, "] are")
         for child in children:
             print(*child.small_disks)
 
@@ -118,6 +126,10 @@ class Disks:
             
         # Path is currently goal so just reverse it
         path.reverse()
+        
+        print(f"\nLarge Disks:\n{self.large_disks}", sep=" ")
+        
+            
         
         print("Solution is")
         
@@ -173,10 +185,10 @@ class Disks:
         # print(f"0 is at: [{zero_index}]")
         # print(f"Large Disk at 0 is: [{jump_distance}]")
         # print("==================")
-        # print(f"Right Jump to:      [{zero_index}] to Small disk index: [{right_jump_index}].  Value: {self.small_disks[right_jump_index]}")
-        # print(f"Left Jump to:       [{zero_index}] to Small disk index: [{left_jump_index}].  Value: {self.small_disks[left_jump_index]}")
-        # print(f"Right neighbor to:  [{zero_index}] to Small disk index: [{right_neighbor}].  Value: {self.small_disks[right_neighbor]}")
-        # print(f"Left neighbor to:   [{zero_index}] to Small disk index: [{left_neighbor}].  Value: {self.small_disks[left_neighbor]}")
+        # print(f"Right Jump to:      [{zero_index}] to Small disk index: [{right_jump_index}].  Value: {self.SmallDisks[right_jump_index]}")
+        # print(f"Left Jump to:       [{zero_index}] to Small disk index: [{left_jump_index}].  Value: {self.SmallDisks[left_jump_index]}")
+        # print(f"Right neighbor to:  [{zero_index}] to Small disk index: [{right_neighbor}].  Value: {self.SmallDisks[right_neighbor]}")
+        # print(f"Left neighbor to:   [{zero_index}] to Small disk index: [{left_neighbor}].  Value: {self.SmallDisks[left_neighbor]}")
         
         # [[left_jump_index, left_neighbor, right_neighbor, right_jump_index], ["left by "+str(jump_distance), "left by 1", "right by 1", "right by "+str(jump_distance)]]
         moves = {right_jump_index, left_jump_index, right_neighbor, left_neighbor}
@@ -257,7 +269,8 @@ class Disks:
         loop_counter = 0
             
         while self.fringe:
-        # while loop_counter < 30: # Debug so print doesnt go crazy 
+        # while loop_counter < 2: # Debug so print doesnt go crazy 
+
             loop_counter += 1
             # Get rid of node with lowest 'f' score
             current_node = hq.heappop(self.fringe)
@@ -267,6 +280,7 @@ class Disks:
             print(f"Costs:          f={current_node.f} (g={current_node.g} + h={current_node.h})")
             print(f"Fringe Size:    {len(self.fringe)}")
             print(f"Closed Set:     {len(closed_set)}")
+            
             
                 
             if self.is_solved(current_node):
@@ -281,6 +295,8 @@ class Disks:
                 
             # Expand neighbors
             children = self.create_children(current_node)
+            
+            self.print_children(current_node, children)
                 
             for child in children:
                 hq.heappush(self.fringe, child)
