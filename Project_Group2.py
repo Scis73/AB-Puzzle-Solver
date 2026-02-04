@@ -45,13 +45,17 @@ class Disks:
         # Expected: n 1s, n 2s, ... n ns, followed by 0. 
         # Yes the Zero can be anywhere but just easier if we keep it in the end like in the lab spec
         self.goal_state_list = []
-        for i in range(1, self.unique_n + 1):
-            self.goal_state_list.extend([i] * self.unique_n)
-        self.goal_state_list.append(0)
-        
+        self.goal_state_set = set()
+        #for i in range(1, self.unique_n + 1):
+         #   self.goal_state_list.extend([i] * self.unique_n)
+        #self.goal_state_list.append(0)
+        for i in range(self.n):
+            self.goal_state_list.append(math.ceil(i/self.unique_n))
+
+        for i in range(self.n):
+            rotated_goal = self.goal_state_list[i:self.n] + self.goal_state_list[0: (i + self.n) % self.n]
+            self.goal_state_set.add(tuple(rotated_goal))
         # Convert to tuple for comparison
-        self.goal_state = tuple(self.goal_state_list)
-        
         # Fringe (Banger Festival Btw :D )
         self.fringe = []
         
@@ -59,7 +63,7 @@ class Disks:
         self.counter = 0
         
         # Initial Node 
-        initial_state = self.SmallDisks(list(small_disks_data), parent=None, g=0)
+        initial_state = self.SmallDisks(tuple(small_disks_data), parent=None, g=0)
         initial_state.g = 0
         initial_state.h = self.heuristic(initial_state)
         initial_state.f = initial_state.g + initial_state.h
@@ -157,7 +161,7 @@ class Disks:
         print(f"(Large Disks):      {self.large_disks}")
         print(f"(Small Disk Start): {self.start_state}") 
         print(f"(Unique n):         {self.unique_n}")
-        print(f"(Goal State):       {self.goal_state}")
+       # print(f"(Goal State):       {self.goal_state}")
         print("==================")
     
     def get_valid_moves(self, small_disks_state):
@@ -194,16 +198,17 @@ class Disks:
 
     def move_disk(self, target_i, current_node):
         # Create a copy of the list data
-        new_data = list(current_node.small_disks)
+        #new_data = list(current_node.small_disks)
+        old_tuple = current_node.small_disks
         zero_index = current_node.zero_index
-        
+        new_tuple = tuple(old_tuple[zero_index] if x == target_i else old_tuple[target_i] if x == zero_index else old_tuple[x] for x in range(self.n))
         # Swap '0' with the target
-        new_data[zero_index], new_data[target_i] = new_data[target_i], new_data[zero_index]
+        #new_data[zero_index], new_data[target_i] = new_data[target_i], new_data[zero_index]
         
         # Create new Node
         # Parent is 'current_node'
         # Cost g increases by 1
-        new_node = self.SmallDisks(new_data, parent=current_node, g=current_node.g + 1)
+        new_node = self.SmallDisks(new_tuple, parent=current_node, g=current_node.g + 1)
         
         # Calculate Heuristic
         new_node.h = self.heuristic(new_node)
@@ -214,7 +219,7 @@ class Disks:
     def is_solved(self, small_disks_state):
         # Aidan Version
         # Checks if current state matches the pre-calculated goal state
-        return tuple(small_disks_state.small_disks) == self.goal_state
+        return small_disks_state.small_disks in self.goal_state_set
     
     '''
     def is_solved(self, small_disks_state):
@@ -262,25 +267,25 @@ class Disks:
             # Get rid of node with lowest 'f' score
             current_node = hq.heappop(self.fringe)
             
-            print(f"\n--- LOOP {loop_counter} ---")
-            print(f"Checking Node:  {current_node.small_disks}")
-            print(f"Costs:          f={current_node.f} (g={current_node.g} + h={current_node.h})")
-            print(f"Fringe Size:    {len(self.fringe)}")
-            print(f"Closed Set:     {len(closed_set)}")
-            
+            #print(f"\n--- LOOP {loop_counter} ---")
+            #print(f"Checking Node:  {current_node.small_disks}")
+            #print(f"Costs:          f={current_node.f} (g={current_node.g} + h={current_node.h})")
+            #print(f"Fringe Size:    {len(self.fringe)}")
+            #print(f"Closed Set:     {len(closed_set)}")
                 
             if self.is_solved(current_node):
                 self.print_solution(current_node)
                 return True
             
             # Then check to see if we have been to it already
-            state_tuple = tuple(current_node.small_disks)
-            if state_tuple in closed_set:
+            #state_tuple = tuple(current_node.small_disks)
+            if current_node.small_disks in closed_set:
                 continue
-            closed_set.add(state_tuple)
+            closed_set.add(current_node.small_disks)
                 
             # Expand neighbors
             children = self.create_children(current_node)
+           # self.print_children(current_node, children) 
                 
             for child in children:
                 hq.heappush(self.fringe, child)
@@ -339,8 +344,8 @@ class Disks:
         print("No solution")
         return False
     '''
-def rep_check(closed_set, og_list):
-    return tuple(og_list) in closed_set
+def rep_check(closed_set, og_tuple):
+    return og_tuple in closed_set
 
 def main():
     '''
@@ -409,7 +414,7 @@ def main():
         
     puzzle = Disks(n_arg, large_disks_input, small_disks_input)
     
-    puzzle.print_details()
+    # puzzle.print_details()
     # puzzle.get_valid_moves()
     puzzle.solve()
 
