@@ -69,7 +69,7 @@ class Disks:
         initial_state.f = initial_state.g + initial_state.h
         # hq.heappush(self.fringe, (initial_state.f, self.counter, initial_state)) # Braeden version
         # If costs of 2 states are the same, compare number of potential children as tiebreaker
-        # More children is better
+        # More children is better, reasoning is that more children means higher chance of finding a better move
         hq.heappush(self.fringe, (initial_state, self.large_disks[initial_state.zero_index] * -1)) # Steve version
 
     # Inner Class represents one node in tree
