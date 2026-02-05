@@ -68,7 +68,9 @@ class Disks:
         initial_state.h = self.heuristic(initial_state)
         initial_state.f = initial_state.g + initial_state.h
         # hq.heappush(self.fringe, (initial_state.f, self.counter, initial_state)) # Braeden version
-        hq.heappush(self.fringe, initial_state) # Steve version
+        # If costs of 2 states are the same, compare number of potential children as tiebreaker
+        # More children is better
+        hq.heappush(self.fringe, (initial_state, self.large_disks[initial_state.zero_index] * -1)) # Steve version
 
     # Inner Class represents one node in tree
     class SmallDisks:
@@ -97,7 +99,7 @@ class Disks:
             if self.h != other.h:
                 return self.h < other.h
             # FINAL TIE BREAKER: Compare the actual lists to prevent crashes (Happend...)
-            return self.small_disks < other.small_disks
+            #return self.small_disks < other.small_disks
         
         
     # ============ Helper Functions 
@@ -267,11 +269,11 @@ class Disks:
         # while loop_counter < 30: # Debug so print doesnt go crazy 
             loop_counter += 1
             # Get rid of node with lowest 'f' score
-            current_node = hq.heappop(self.fringe)
+            current_node = hq.heappop(self.fringe)[0]
             
-            #print(f"\n--- LOOP {loop_counter} ---")
+            print(f"\n--- LOOP {loop_counter} ---")
             #print(f"Checking Node:  {current_node.small_disks}")
-            #print(f"Costs:          f={current_node.f} (g={current_node.g} + h={current_node.h})")
+            print(f"Costs:          f={current_node.f} (g={current_node.g} + h={current_node.h})")
             #print(f"Fringe Size:    {len(self.fringe)}")
             #print(f"Closed Set:     {len(closed_set)}")
                 
@@ -290,7 +292,7 @@ class Disks:
            # self.print_children(current_node, children) 
                 
             for child in children:
-                hq.heappush(self.fringe, child)
+                hq.heappush(self.fringe, (child, self.large_disks[child.zero_index] * -1))
             
         # Else No Solution
         print("No Solution")
