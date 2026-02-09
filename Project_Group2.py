@@ -64,13 +64,15 @@ class Disks:
         
         # Initial Node 
         initial_state = self.SmallDisks(tuple(small_disks_data), parent=None, g=0)
+        initial_state.zero_index = initial_state.small_disks.index(0)
         initial_state.g = 0
         initial_state.h = self.heuristic(initial_state)
         initial_state.f = initial_state.g + initial_state.h
         # hq.heappush(self.fringe, (initial_state.f, self.counter, initial_state)) # Braeden version
         # If costs of 2 states are the same, compare number of potential children as tiebreaker
         # More children is better, reasoning is that more children means higher chance of finding a better move
-        hq.heappush(self.fringe, (initial_state, self.large_disks[initial_state.zero_index] * -1)) # Steve version
+       # hq.heappush(self.fringe, (initial_state, self.large_disks[initial_state.zero_index]*-1)) # Steve version
+        hq.heappush(self.fringe, initial_state) # Steve version
 
     # Inner Class represents one node in tree
     class SmallDisks:
@@ -81,7 +83,7 @@ class Disks:
             self.parent = parent
             
             # Find 0 (empty slot) immediately
-            self.zero_index = self.small_disks.index(0)
+            self.zero_index = None
             
             
             # A* Costs
@@ -125,12 +127,24 @@ class Disks:
         # Path is currently goal so just reverse it
         path.reverse()
         
+        #print(f"\nLarge Disks:\n{self.large_disks}", sep=" ")
         print("Solution is")
-        
         for state in path:
             # Print list as space-separated string
             print(" ".join(map(str, state)))
-
+    ''' 
+    def heuristic(self, small_disks_state):
+        # Steve version
+        # Count number of incorrect pairs
+        wrong_count = 0
+        last_disk = small_disks_state.small_disks[-1] 
+        for i in range(self.n):
+            current_disk = small_disks_state.small_disks[i]
+            if not((current_disk == last_disk) or (current_disk == ((last_disk + 1) % (self.unique_n+1)))):
+                wrong_count += 1
+            last_disk = current_disk
+        return wrong_count
+    '''
     def heuristic(self, small_disks_state):
         # Estimate Distance to goal using Manhattan Distance but just for a circle.
         # Calcs how far every tile is from target pos.
@@ -147,7 +161,6 @@ class Disks:
             # If we have 3 unique values and we want to estimate where the 2s go
             # (2-1) * 3 = Index 3, which is ROUGHLY where the start of 2s are. 
             target_group_start = (val - 1) * n_group_size
-            
             # Distance clockwise
             diff = abs(current_idx - target_group_start)
             # Since cirlce, distance is min of wrap-around
@@ -156,7 +169,7 @@ class Disks:
             total_distance += dist
             
         return total_distance
-
+     
     def print_details(self):
         print("==================")
         print(f"System Size (N):    {self.n}")
@@ -214,6 +227,8 @@ class Disks:
         # Cost g increases by 1
         new_node = self.SmallDisks(new_tuple, parent=current_node, g=current_node.g + 1)
         
+        # Set new zero_index by target i instead of using index every time, O(1) instead of O(n)
+        new_node.zero_index = target_i
         # Calculate Heuristic
         new_node.h = self.heuristic(new_node)
         new_node.f = new_node.g + new_node.h
@@ -269,7 +284,7 @@ class Disks:
         # while loop_counter < 30: # Debug so print doesnt go crazy 
             loop_counter += 1
             # Get rid of node with lowest 'f' score
-            current_node = hq.heappop(self.fringe)[0]
+            current_node = hq.heappop(self.fringe)
             
             print(f"\n--- LOOP {loop_counter} ---")
             #print(f"Checking Node:  {current_node.small_disks}")
@@ -278,6 +293,9 @@ class Disks:
             #print(f"Closed Set:     {len(closed_set)}")
                 
             if self.is_solved(current_node):
+                print(f"\n--- LOOP {loop_counter} ---")
+                #print(f"Checking Node:  {current_node.small_disks}")
+                print(f"Costs:          f={current_node.f} (g={current_node.g} + h={current_node.h})")
                 self.print_solution(current_node)
                 return True
             
@@ -292,7 +310,7 @@ class Disks:
            # self.print_children(current_node, children) 
                 
             for child in children:
-                hq.heappush(self.fringe, (child, self.large_disks[child.zero_index] * -1))
+                hq.heappush(self.fringe, child)
             
         # Else No Solution
         print("No Solution")
