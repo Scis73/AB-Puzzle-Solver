@@ -125,7 +125,7 @@ class Disks:
         # Path is currently goal so just reverse it
         path.reverse()
         
-        print(f"\nLarge Disks:\n{self.large_disks}", sep=" ")
+        # print(f"\nLarge Disks:\n{self.large_disks}", sep=" ")
         
             
         
@@ -276,9 +276,9 @@ class Disks:
             # Get rid of node with lowest 'f' score
             current_node = hq.heappop(self.fringe)[0]
             
-            print(f"\n--- LOOP {loop_counter} ---")
+            # print(f"\n--- LOOP {loop_counter} ---")
             #print(f"Checking Node:  {current_node.small_disks}")
-            print(f"Costs:          f={current_node.f} (g={current_node.g} + h={current_node.h})")
+            # print(f"Costs:          f={current_node.f} (g={current_node.g} + h={current_node.h})")
             #print(f"Fringe Size:    {len(self.fringe)}")
             #print(f"Closed Set:     {len(closed_set)}")
                 
